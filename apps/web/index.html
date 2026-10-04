@@ -334,52 +334,6 @@
 
         <!-- Top Header Actions -->
         <div class="header-actions">
-          <!-- Auto-Refresh Live Sync Widget -->
-          <div class="sync-wrapper" id="syncWrapper">
-            <button class="sync-pill-btn" id="syncPillBtn" title="Auto-Refresh (Click for settings)" aria-label="Auto-refresh status and controls">
-              <span class="sync-dot live" id="syncDot"></span>
-              <span class="sync-label" id="syncLabel">Live</span>
-              <svg class="sync-spin-icon" id="syncSpinIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-              </svg>
-            </button>
-            <div class="sync-dropdown-menu" id="syncDropdownMenu">
-              <div class="sync-dropdown-header">
-                <span class="sync-dropdown-title">LIVE AUTO-REFRESH</span>
-                <span class="sync-last-time" id="syncLastTime">Just now</span>
-              </div>
-              <div class="sync-options-list">
-                <button type="button" class="sync-opt-btn active" data-interval="15000">
-                  <span class="sync-opt-indicator"></span> 15 seconds <span class="sync-opt-tag">Default</span>
-                </button>
-                <button type="button" class="sync-opt-btn" data-interval="30000">
-                  <span class="sync-opt-indicator"></span> 30 seconds
-                </button>
-                <button type="button" class="sync-opt-btn" data-interval="60000">
-                  <span class="sync-opt-indicator"></span> 1 minute
-                </button>
-                <button type="button" class="sync-opt-btn" data-interval="0">
-                  <span class="sync-opt-indicator"></span> Paused
-                </button>
-              </div>
-              <div class="sync-dropdown-divider"></div>
-              <button type="button" class="sync-refresh-now-btn" id="btnSyncRefreshNow">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-                <span>Refresh Activity Now</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- PWA Install Button -->
-          <button class="btn-install-pwa" id="btnInstallPwa" style="display: none;" title="Install DataVault6 App" aria-label="Install DataVault6">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            <span class="install-pwa-label">Install App</span>
-          </button>
-
           <!-- Dark Mode Toggle -->
           <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle theme">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

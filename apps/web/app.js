@@ -5379,99 +5379,42 @@
   };
 
   // =========================================================================
-  // 13. PROGRESSIVE WEB APP (PWA) INSTALL & LIFECYCLE
+  // 13. PROGRESSIVE WEB APP (PWA) SERVICE WORKER
   // =========================================================================
 
   const PwaManager = {
-    deferredPrompt: null,
-
     init() {
-      // Register Service Worker
+      // Register Service Worker for native browser PWA installability & offline shell
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
             .register("/sw.js")
             .then((registration) => {
               console.log("[PWA] Service Worker active with scope:", registration.scope);
-
-              // Listen for service worker updates
-              registration.addEventListener("updatefound", () => {
-                const newWorker = registration.installing;
-                if (newWorker) {
-                  newWorker.addEventListener("statechange", () => {
-                    if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                      console.log("[PWA] Application update available.");
-                    }
-                  });
-                }
-              });
             })
             .catch((err) => {
               console.warn("[PWA] Service worker registration error:", err);
             });
         });
       }
-
-      // Listen for browser PWA install prompt
-      const installBtn = document.getElementById("btnInstallPwa");
-
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        this.deferredPrompt = e;
-        if (installBtn) {
-          installBtn.style.display = "inline-flex";
-        }
-      });
-
-      if (installBtn) {
-        installBtn.addEventListener("click", async () => {
-          if (this.deferredPrompt) {
-            this.deferredPrompt.prompt();
-            const { outcome } = await this.deferredPrompt.userChoice;
-            console.log("[PWA] Installation user prompt result:", outcome);
-            if (outcome === "accepted") {
-              showToast("DataVault6 installation initiated!", "success");
-            }
-            this.deferredPrompt = null;
-            installBtn.style.display = "none";
-          } else {
-            showToast("To install, use browser menu and choose 'Install DataVault6'", "info");
-          }
-        });
-      }
-
-      window.addEventListener("appinstalled", () => {
-        this.deferredPrompt = null;
-        if (installBtn) installBtn.style.display = "none";
-        showToast("DataVault6 installed successfully as a Progressive Web App!", "success");
-      });
     }
   };
 
   // =========================================================================
-  // 14. LIVE AUTO-REFRESH ACTIVITY & DATA MANAGER
+  // 14. SILENT BACKGROUND AUTO-REFRESH ACTIVITY & DATA MANAGER
   // =========================================================================
 
   const AutoRefreshManager = {
     timer: null,
-    interval: 15000, // 15s default
+    interval: 15000, // 15s background cycle
     isRefreshing: false,
-    lastRefreshedAt: null,
 
     init() {
-      const savedInterval = localStorage.getItem("datavault6_refresh_interval");
-      if (savedInterval !== null) {
-        this.interval = parseInt(savedInterval, 10);
-      }
-
-      this.bindUI();
-      this.updatePillUI();
-
       // Pause when tab is inactive, resume immediately when tab is active
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
-          if (AuthManager.currentUser && this.interval > 0) {
-            this.refreshAll(false);
+          if (AuthManager.currentUser) {
+            this.refreshAll();
           }
           this.startTimer();
         } else {
@@ -5480,86 +5423,12 @@
       });
     },
 
-    bindUI() {
-      const pillBtn = document.getElementById("syncPillBtn");
-      const dropdown = document.getElementById("syncDropdownMenu");
-      const refreshNowBtn = document.getElementById("btnSyncRefreshNow");
-
-      if (pillBtn && dropdown) {
-        pillBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          dropdown.classList.toggle("active");
-        });
-
-        document.addEventListener("click", (e) => {
-          if (!e.target.closest("#syncWrapper")) {
-            dropdown.classList.remove("active");
-          }
-        });
-      }
-
-      if (refreshNowBtn) {
-        refreshNowBtn.addEventListener("click", () => {
-          if (dropdown) dropdown.classList.remove("active");
-          this.refreshAll(true);
-        });
-      }
-
-      // Interval options
-      document.querySelectorAll(".sync-opt-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const newInterval = parseInt(btn.dataset.interval, 10);
-          this.setInterval(newInterval);
-          if (dropdown) dropdown.classList.remove("active");
-        });
-      });
-    },
-
-    setInterval(ms) {
-      this.interval = ms;
-      localStorage.setItem("datavault6_refresh_interval", ms.toString());
-      this.updatePillUI();
-      this.startTimer();
-      if (ms > 0) {
-        showToast(`Auto-refresh interval set to ${ms / 1000}s`, "info");
-      } else {
-        showToast("Auto-refresh paused", "info");
-      }
-    },
-
-    updatePillUI() {
-      const pillBtn = document.getElementById("syncPillBtn");
-      const dot = document.getElementById("syncDot");
-      const label = document.getElementById("syncLabel");
-
-      document.querySelectorAll(".sync-opt-btn").forEach((btn) => {
-        const val = parseInt(btn.dataset.interval, 10);
-        btn.classList.toggle("active", val === this.interval);
-      });
-
-      if (this.interval === 0) {
-        if (pillBtn) pillBtn.classList.add("is-paused");
-        if (dot) {
-          dot.classList.remove("live");
-          dot.classList.add("paused");
-        }
-        if (label) label.textContent = "Paused";
-      } else {
-        if (pillBtn) pillBtn.classList.remove("is-paused");
-        if (dot) {
-          dot.classList.remove("paused");
-          dot.classList.add("live");
-        }
-        if (label) label.textContent = `${this.interval / 1000}s`;
-      }
-    },
-
     startTimer() {
       this.stopTimer();
-      if (this.interval > 0 && AuthManager.currentUser) {
+      if (AuthManager.currentUser) {
         this.timer = setInterval(() => {
           if (document.visibilityState === "visible" && AuthManager.currentUser) {
-            this.refreshAll(false);
+            this.refreshAll();
           }
         }, this.interval);
       }
@@ -5572,66 +5441,46 @@
       }
     },
 
-    async refreshAll(manual = false) {
+    async refreshAll() {
       if (this.isRefreshing) return;
       if (!AuthManager.currentUser) return;
 
       this.isRefreshing = true;
-      const spinIcon = document.getElementById("syncSpinIcon");
-      const timeEl = document.getElementById("syncLastTime");
-
-      if (spinIcon) spinIcon.classList.add("spinning");
-      if (timeEl) timeEl.textContent = "Syncing...";
 
       try {
         const tasks = [];
 
-        // 1. Notifications update across the entire UI
+        // 1. Silently refresh notifications count and list
         tasks.push(Promise.resolve(NotificationsManager.loadNotifications()).catch(() => {}));
 
-        // 2. Active Screen Context refresh
+        // 2. Silently refresh active screen data
         const activeNav = document.querySelector(".sidebar-nav .nav-item.active");
         const activeId = activeNav?.id || "";
         const activeDb = activeNav?.dataset?.db;
 
         if (activeDb) {
-          // Inside a database screen
           tasks.push(Promise.resolve(DatasetsManager.loadDatasets()).catch(() => {}));
         } else if (activeId === "nav-dashboard" || !activeId) {
-          // Dashboard screen: stats and recent activities
           tasks.push(Promise.resolve(DashboardManager.loadStats()).catch(() => {}));
           tasks.push(Promise.resolve(ActivityLogsManager.loadRecentActivity()).catch(() => {}));
         } else if (activeId === "nav-explore" || activeId === "nav-my-datasets" || activeId === "nav-bookmarked" || activeId === "nav-datasets") {
-          // Datasets screen
           tasks.push(Promise.resolve(DatasetsManager.loadDatasets()).catch(() => {}));
         } else if (activeId === "nav-requests-tool") {
-          // Requests screen
           tasks.push(Promise.resolve(DataRequestsManager.loadRequests()).catch(() => {}));
         } else if (activeId === "nav-analytics-tool") {
-          // Analytics screen
           tasks.push(Promise.resolve(AnalyticsScreenManager.loadAnalytics()).catch(() => {}));
         }
 
-        // If activity log modal is currently open, refresh full logs
         const logModal = document.getElementById("activityLogsModal");
         if (logModal && logModal.style.display !== "none") {
           tasks.push(Promise.resolve(ActivityLogsManager.loadFullLogs()).catch(() => {}));
         }
 
         await Promise.allSettled(tasks);
-
-        this.lastRefreshedAt = new Date();
-        const formattedTime = this.lastRefreshedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        if (timeEl) timeEl.textContent = formattedTime;
-
-        if (manual) {
-          showToast("Live activity & data updated", "success");
-        }
       } catch (err) {
-        console.warn("[Auto-Refresh] Error syncing UI state:", err);
+        // Silent background catch
       } finally {
         this.isRefreshing = false;
-        if (spinIcon) spinIcon.classList.remove("spinning");
       }
     }
   };
