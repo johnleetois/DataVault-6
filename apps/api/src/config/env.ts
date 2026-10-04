@@ -25,37 +25,14 @@ export function parseDatasetDatabaseConfig(source: NodeJS.ProcessEnv = process.e
   return getDatasetDatabaseConfig(source);
 }
 
-const databaseUrl = z.string().trim().min(1).refine((value) => {
-  try {
-    const url = new URL(value);
-    return ["postgresql:", "postgres:"].includes(url.protocol) && !!url.hostname && url.pathname.length > 1;
-  } catch {
-    return false;
+export { requireSystemDatabaseUrl, requireLogDatabaseUrl } from "./database-urls.js";
+
+let cachedEnv: AppEnv | null = null;
+export const env: AppEnv = new Proxy({} as AppEnv, {
+  get(_target, prop: string | symbol) {
+    if (!cachedEnv || process.env.NODE_ENV === "test") {
+      cachedEnv = parseEnv(process.env);
+    }
+    return cachedEnv[prop as keyof AppEnv];
   }
 });
-
-// Database configuration is validated only when requested, preserving liveness.
-export function requireSystemDatabaseUrl(
-  source: NodeJS.ProcessEnv = process.env,
-  key: "SYSTEM_DATABASE_URL" | "SYSTEM_DATABASE_DIRECT_URL" = "SYSTEM_DATABASE_URL"
-): string {
-  const result = databaseUrl.safeParse(source[key]);
-  if (!result.success) throw new Error(`${key} must be configured with a valid PostgreSQL URL.`);
-  return result.data;
-}
-
-export function requireLogDatabaseUrl(source: NodeJS.ProcessEnv = process.env): string {
-  const result = databaseUrl.safeParse(source.LOG_DATABASE_URL);
-  if (!result.success) throw new Error("LOG_DATABASE_URL must be configured with a valid PostgreSQL URL.");
-  const logUrl = new URL(result.data);
-  const systemValues = [source.SYSTEM_DATABASE_URL, source.SYSTEM_DATABASE_DIRECT_URL].filter((value): value is string => Boolean(value));
-  if (systemValues.some((value) => {
-    const systemUrl = new URL(value);
-    return systemUrl.protocol === logUrl.protocol && systemUrl.hostname === logUrl.hostname && systemUrl.port === logUrl.port && systemUrl.pathname === logUrl.pathname;
-  })) {
-    throw new Error("LOG_DATABASE_URL must point to a database separate from the system database.");
-  }
-  return result.data;
-}
-
-export const env = parseEnv(process.env);

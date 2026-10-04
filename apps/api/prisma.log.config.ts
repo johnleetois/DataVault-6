@@ -1,6 +1,6 @@
 import "./src/config/load-env.js";
 import { defineConfig } from "prisma/config";
-import { requireLogDatabaseUrl } from "./src/config/env.js";
+import { requireLogDatabaseUrl } from "./src/config/database-urls.js";
 
 const logDatabaseUrl = process.env.LOG_DATABASE_URL?.trim();
 const isMigrationCommand = process.argv.includes("migrate");
