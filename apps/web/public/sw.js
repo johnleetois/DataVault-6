@@ -3,14 +3,13 @@
  * High-performance PWA caching, offline shell resilience & lifecycle management
  */
 
-const CACHE_NAME = "datavault6-pwa-v1";
+const CACHE_NAME = "datavault6-pwa-v2";
 
 const PRECACHE_ASSETS = [
   "/",
   "/index.html",
   "/style.css",
   "/app.js",
-  "/firebase.js",
   "/manifest.webmanifest",
   "/favicon.ico",
   "/favicon-16x16.png",
