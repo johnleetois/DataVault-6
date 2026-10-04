@@ -305,9 +305,16 @@
         ActivityLogsManager.loadRecentActivity();
         NotificationsManager.loadNotifications();
       }
+
+      if (typeof AutoRefreshManager !== "undefined") {
+        AutoRefreshManager.startTimer();
+      }
     },
 
     showLoginScreen() {
+      if (typeof AutoRefreshManager !== "undefined") {
+        AutoRefreshManager.stopTimer();
+      }
       const loginScreen = document.getElementById("loginScreen");
       const appLayout = document.getElementById("appLayout");
       if (appLayout) appLayout.style.display = "none";
@@ -5312,7 +5319,325 @@
   }
 
   // =========================================================================
-  // 11. INITIALIZATION ON DOM READY
+  // 12. MOBILE NAVIGATION & DRAWER MANAGER
+  // =========================================================================
+
+  const MobileNavManager = {
+    init() {
+      const mobileBtn = document.getElementById("mobileMenuBtn");
+      const closeBtn = document.getElementById("sidebarCloseBtn");
+      const backdrop = document.getElementById("sidebarBackdrop");
+      const sidebar = document.getElementById("sidebar");
+
+      const closeDrawer = () => {
+        if (sidebar) sidebar.classList.remove("mobile-open");
+        if (backdrop) backdrop.classList.remove("active");
+        document.body.classList.remove("drawer-open");
+      };
+
+      const openDrawer = () => {
+        if (sidebar) sidebar.classList.add("mobile-open");
+        if (backdrop) backdrop.classList.add("active");
+        document.body.classList.add("drawer-open");
+      };
+
+      if (mobileBtn) {
+        mobileBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (sidebar?.classList.contains("mobile-open")) {
+            closeDrawer();
+          } else {
+            openDrawer();
+          }
+        });
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener("click", closeDrawer);
+      }
+
+      if (backdrop) {
+        backdrop.addEventListener("click", closeDrawer);
+      }
+
+      // Close drawer whenever any navigation link is clicked
+      document.querySelectorAll(".sidebar-nav .nav-item").forEach((link) => {
+        link.addEventListener("click", () => {
+          if (window.innerWidth <= 992) {
+            closeDrawer();
+          }
+        });
+      });
+
+      // Close on Escape key
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && sidebar?.classList.contains("mobile-open")) {
+          closeDrawer();
+        }
+      });
+    }
+  };
+
+  // =========================================================================
+  // 13. PROGRESSIVE WEB APP (PWA) INSTALL & LIFECYCLE
+  // =========================================================================
+
+  const PwaManager = {
+    deferredPrompt: null,
+
+    init() {
+      // Register Service Worker
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log("[PWA] Service Worker active with scope:", registration.scope);
+
+              // Listen for service worker updates
+              registration.addEventListener("updatefound", () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                  newWorker.addEventListener("statechange", () => {
+                    if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                      console.log("[PWA] Application update available.");
+                    }
+                  });
+                }
+              });
+            })
+            .catch((err) => {
+              console.warn("[PWA] Service worker registration error:", err);
+            });
+        });
+      }
+
+      // Listen for browser PWA install prompt
+      const installBtn = document.getElementById("btnInstallPwa");
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        this.deferredPrompt = e;
+        if (installBtn) {
+          installBtn.style.display = "inline-flex";
+        }
+      });
+
+      if (installBtn) {
+        installBtn.addEventListener("click", async () => {
+          if (this.deferredPrompt) {
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+            console.log("[PWA] Installation user prompt result:", outcome);
+            if (outcome === "accepted") {
+              showToast("DataVault6 installation initiated!", "success");
+            }
+            this.deferredPrompt = null;
+            installBtn.style.display = "none";
+          } else {
+            showToast("To install, use browser menu and choose 'Install DataVault6'", "info");
+          }
+        });
+      }
+
+      window.addEventListener("appinstalled", () => {
+        this.deferredPrompt = null;
+        if (installBtn) installBtn.style.display = "none";
+        showToast("DataVault6 installed successfully as a Progressive Web App!", "success");
+      });
+    }
+  };
+
+  // =========================================================================
+  // 14. LIVE AUTO-REFRESH ACTIVITY & DATA MANAGER
+  // =========================================================================
+
+  const AutoRefreshManager = {
+    timer: null,
+    interval: 15000, // 15s default
+    isRefreshing: false,
+    lastRefreshedAt: null,
+
+    init() {
+      const savedInterval = localStorage.getItem("datavault6_refresh_interval");
+      if (savedInterval !== null) {
+        this.interval = parseInt(savedInterval, 10);
+      }
+
+      this.bindUI();
+      this.updatePillUI();
+
+      // Pause when tab is inactive, resume immediately when tab is active
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          if (AuthManager.currentUser && this.interval > 0) {
+            this.refreshAll(false);
+          }
+          this.startTimer();
+        } else {
+          this.stopTimer();
+        }
+      });
+    },
+
+    bindUI() {
+      const pillBtn = document.getElementById("syncPillBtn");
+      const dropdown = document.getElementById("syncDropdownMenu");
+      const refreshNowBtn = document.getElementById("btnSyncRefreshNow");
+
+      if (pillBtn && dropdown) {
+        pillBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dropdown.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!e.target.closest("#syncWrapper")) {
+            dropdown.classList.remove("active");
+          }
+        });
+      }
+
+      if (refreshNowBtn) {
+        refreshNowBtn.addEventListener("click", () => {
+          if (dropdown) dropdown.classList.remove("active");
+          this.refreshAll(true);
+        });
+      }
+
+      // Interval options
+      document.querySelectorAll(".sync-opt-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const newInterval = parseInt(btn.dataset.interval, 10);
+          this.setInterval(newInterval);
+          if (dropdown) dropdown.classList.remove("active");
+        });
+      });
+    },
+
+    setInterval(ms) {
+      this.interval = ms;
+      localStorage.setItem("datavault6_refresh_interval", ms.toString());
+      this.updatePillUI();
+      this.startTimer();
+      if (ms > 0) {
+        showToast(`Auto-refresh interval set to ${ms / 1000}s`, "info");
+      } else {
+        showToast("Auto-refresh paused", "info");
+      }
+    },
+
+    updatePillUI() {
+      const pillBtn = document.getElementById("syncPillBtn");
+      const dot = document.getElementById("syncDot");
+      const label = document.getElementById("syncLabel");
+
+      document.querySelectorAll(".sync-opt-btn").forEach((btn) => {
+        const val = parseInt(btn.dataset.interval, 10);
+        btn.classList.toggle("active", val === this.interval);
+      });
+
+      if (this.interval === 0) {
+        if (pillBtn) pillBtn.classList.add("is-paused");
+        if (dot) {
+          dot.classList.remove("live");
+          dot.classList.add("paused");
+        }
+        if (label) label.textContent = "Paused";
+      } else {
+        if (pillBtn) pillBtn.classList.remove("is-paused");
+        if (dot) {
+          dot.classList.remove("paused");
+          dot.classList.add("live");
+        }
+        if (label) label.textContent = `${this.interval / 1000}s`;
+      }
+    },
+
+    startTimer() {
+      this.stopTimer();
+      if (this.interval > 0 && AuthManager.currentUser) {
+        this.timer = setInterval(() => {
+          if (document.visibilityState === "visible" && AuthManager.currentUser) {
+            this.refreshAll(false);
+          }
+        }, this.interval);
+      }
+    },
+
+    stopTimer() {
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
+    },
+
+    async refreshAll(manual = false) {
+      if (this.isRefreshing) return;
+      if (!AuthManager.currentUser) return;
+
+      this.isRefreshing = true;
+      const spinIcon = document.getElementById("syncSpinIcon");
+      const timeEl = document.getElementById("syncLastTime");
+
+      if (spinIcon) spinIcon.classList.add("spinning");
+      if (timeEl) timeEl.textContent = "Syncing...";
+
+      try {
+        const tasks = [];
+
+        // 1. Notifications update across the entire UI
+        tasks.push(Promise.resolve(NotificationsManager.loadNotifications()).catch(() => {}));
+
+        // 2. Active Screen Context refresh
+        const activeNav = document.querySelector(".sidebar-nav .nav-item.active");
+        const activeId = activeNav?.id || "";
+        const activeDb = activeNav?.dataset?.db;
+
+        if (activeDb) {
+          // Inside a database screen
+          tasks.push(Promise.resolve(DatasetsManager.loadDatasets()).catch(() => {}));
+        } else if (activeId === "nav-dashboard" || !activeId) {
+          // Dashboard screen: stats and recent activities
+          tasks.push(Promise.resolve(DashboardManager.loadStats()).catch(() => {}));
+          tasks.push(Promise.resolve(ActivityLogsManager.loadRecentActivity()).catch(() => {}));
+        } else if (activeId === "nav-explore" || activeId === "nav-my-datasets" || activeId === "nav-bookmarked" || activeId === "nav-datasets") {
+          // Datasets screen
+          tasks.push(Promise.resolve(DatasetsManager.loadDatasets()).catch(() => {}));
+        } else if (activeId === "nav-requests-tool") {
+          // Requests screen
+          tasks.push(Promise.resolve(DataRequestsManager.loadRequests()).catch(() => {}));
+        } else if (activeId === "nav-analytics-tool") {
+          // Analytics screen
+          tasks.push(Promise.resolve(AnalyticsScreenManager.loadAnalytics()).catch(() => {}));
+        }
+
+        // If activity log modal is currently open, refresh full logs
+        const logModal = document.getElementById("activityLogsModal");
+        if (logModal && logModal.style.display !== "none") {
+          tasks.push(Promise.resolve(ActivityLogsManager.loadFullLogs()).catch(() => {}));
+        }
+
+        await Promise.allSettled(tasks);
+
+        this.lastRefreshedAt = new Date();
+        const formattedTime = this.lastRefreshedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        if (timeEl) timeEl.textContent = formattedTime;
+
+        if (manual) {
+          showToast("Live activity & data updated", "success");
+        }
+      } catch (err) {
+        console.warn("[Auto-Refresh] Error syncing UI state:", err);
+      } finally {
+        this.isRefreshing = false;
+        if (spinIcon) spinIcon.classList.remove("spinning");
+      }
+    }
+  };
+
+  // =========================================================================
+  // 15. INITIALIZATION ON DOM READY
   // =========================================================================
 
   document.addEventListener("DOMContentLoaded", async function () {
@@ -5327,11 +5652,14 @@
     ActionsManager.init();
     AdminManager.init();
     ActivationManager.init();
+    MobileNavManager.init();
+    PwaManager.init();
+    AutoRefreshManager.init();
 
     // Authenticate first; data managers are triggered by showAppLayout() once authenticated
     await AuthManager.init();
 
-    console.log("DataVault6 frontend fully integrated with real REST backend APIs.");
+    console.log("DataVault6 frontend fully integrated with real REST backend APIs, PWA, and Live Sync.");
   });
 
 })();

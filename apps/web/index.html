@@ -2,9 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>DataVault6 - Centralized Dataset Collection System</title>
   <meta name="description" content="DataVault6 - Centralized dataset collection, exploration, and activity monitoring system.">
+
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="theme-color" content="#0B1329">
+  <meta name="color-scheme" content="dark light">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DataVault6">
+  <meta name="application-name" content="DataVault6">
+
+  <!-- PWA Web App Manifest -->
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- Favicons & Apple Touch Icons (Generated from official multi-database icon) -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -16,18 +35,7 @@
     <div class="login-card">
       <div class="login-brand-header">
         <div class="login-brand-icon">
-          <svg width="48" height="48" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="36" height="36" rx="10" fill="url(#login-logo-grad)"/>
-            <path d="M18 9C12.477 9 8 10.343 8 12C8 13.657 12.477 15 18 15C23.523 15 28 13.657 28 12C28 10.343 23.523 9 18 9Z" fill="#93C5FD"/>
-            <path d="M28 14.5C28 16.157 23.523 17.5 18 17.5C12.477 17.5 8 16.157 8 14.5V18.5C8 20.157 12.477 21.5 18 21.5C23.523 21.5 28 20.157 28 18.5V14.5Z" fill="#60A5FA"/>
-            <path d="M28 21C28 22.657 23.523 24 18 24C12.477 24 8 22.657 8 21V25C8 26.657 12.477 28 18 28C23.523 28 28 26.657 28 25V21Z" fill="#3B82F6"/>
-            <defs>
-              <linearGradient id="login-logo-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#1E3A8A"/>
-                <stop offset="1" stop-color="#2563EB"/>
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="/brand-logo.png" alt="DataVault6 Logo" class="brand-img-logo login-logo-img">
         </div>
         <h1 class="login-brand-title">DataVault6</h1>
         <p class="login-brand-subtitle">Centralized Dataset Collection System</p>
@@ -85,23 +93,18 @@
       <!-- Brand Logo -->
       <div class="brand">
         <div class="brand-logo">
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="36" height="36" rx="10" fill="url(#logo-gradient)"/>
-            <path d="M18 9C12.477 9 8 10.343 8 12C8 13.657 12.477 15 18 15C23.523 15 28 13.657 28 12C28 10.343 23.523 9 18 9Z" fill="#93C5FD"/>
-            <path d="M28 14.5C28 16.157 23.523 17.5 18 17.5C12.477 17.5 8 16.157 8 14.5V18.5C8 20.157 12.477 21.5 18 21.5C23.523 21.5 28 20.157 28 18.5V14.5Z" fill="#60A5FA"/>
-            <path d="M28 21C28 22.657 23.523 24 18 24C12.477 24 8 22.657 8 21V25C8 26.657 12.477 28 18 28C23.523 28 28 26.657 28 25V21Z" fill="#3B82F6"/>
-            <defs>
-              <linearGradient id="logo-gradient" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#1E3A8A"/>
-                <stop offset="1" stop-color="#2563EB"/>
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="/brand-logo.png" alt="DataVault6 Logo" class="brand-img-logo sidebar-logo-img">
         </div>
         <div class="brand-text">
           <h1 class="brand-title">DataVault6</h1>
           <p class="brand-subtitle">Centralized Dataset Collection System</p>
         </div>
+        <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Navigation" title="Close Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
 
       <!-- Navigation Links -->
@@ -295,10 +298,28 @@
       </div>
     </aside>
 
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
     <!-- MAIN BODY AREA (Header + Content + Right Panel) -->
     <div class="main-wrapper">
       <!-- TOP NAVIGATION BAR -->
       <header class="top-header">
+        <!-- Mobile Navigation Menu Toggle Button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu" title="Open Navigation Menu">
+          <svg class="hamburger-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Mobile Brand Pill (Displayed on smaller screens) -->
+        <div class="mobile-brand-pill">
+          <img src="/brand-logo.png" alt="DataVault6 Logo" class="mobile-brand-icon" width="28" height="28">
+          <span class="mobile-brand-text">DataVault6</span>
+        </div>
+
         <!-- Global Search Bar -->
         <div class="search-box">
           <span class="search-icon">
@@ -313,6 +334,52 @@
 
         <!-- Top Header Actions -->
         <div class="header-actions">
+          <!-- Auto-Refresh Live Sync Widget -->
+          <div class="sync-wrapper" id="syncWrapper">
+            <button class="sync-pill-btn" id="syncPillBtn" title="Auto-Refresh (Click for settings)" aria-label="Auto-refresh status and controls">
+              <span class="sync-dot live" id="syncDot"></span>
+              <span class="sync-label" id="syncLabel">Live</span>
+              <svg class="sync-spin-icon" id="syncSpinIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+            </button>
+            <div class="sync-dropdown-menu" id="syncDropdownMenu">
+              <div class="sync-dropdown-header">
+                <span class="sync-dropdown-title">LIVE AUTO-REFRESH</span>
+                <span class="sync-last-time" id="syncLastTime">Just now</span>
+              </div>
+              <div class="sync-options-list">
+                <button type="button" class="sync-opt-btn active" data-interval="15000">
+                  <span class="sync-opt-indicator"></span> 15 seconds <span class="sync-opt-tag">Default</span>
+                </button>
+                <button type="button" class="sync-opt-btn" data-interval="30000">
+                  <span class="sync-opt-indicator"></span> 30 seconds
+                </button>
+                <button type="button" class="sync-opt-btn" data-interval="60000">
+                  <span class="sync-opt-indicator"></span> 1 minute
+                </button>
+                <button type="button" class="sync-opt-btn" data-interval="0">
+                  <span class="sync-opt-indicator"></span> Paused
+                </button>
+              </div>
+              <div class="sync-dropdown-divider"></div>
+              <button type="button" class="sync-refresh-now-btn" id="btnSyncRefreshNow">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                <span>Refresh Activity Now</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PWA Install Button -->
+          <button class="btn-install-pwa" id="btnInstallPwa" style="display: none;" title="Install DataVault6 App" aria-label="Install DataVault6">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span class="install-pwa-label">Install App</span>
+          </button>
+
           <!-- Dark Mode Toggle -->
           <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle theme">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

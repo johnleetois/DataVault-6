@@ -1,0 +1,63 @@
+{
+  "id": "/#datavault6",
+  "name": "DataVault6 - Centralized Dataset Platform",
+  "short_name": "DataVault6",
+  "description": "Unified multi-engine dataset management, intelligent routing, and real-time activity monitoring system.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0B1329",
+  "theme_color": "#0B1329",
+  "categories": ["productivity", "utilities", "developer"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open DataVault6 system dashboard",
+      "url": "/#dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Explore Datasets",
+      "short_name": "Explore",
+      "description": "Browse and query enterprise datasets",
+      "url": "/#explore",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Upload Dataset",
+      "short_name": "Upload",
+      "description": "Ingest and analyze new datasets",
+      "url": "/#upload",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
