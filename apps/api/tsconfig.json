@@ -13,8 +13,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "vitest"]
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules", "tests"]
 }

@@ -4,6 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "start": "node dist/src/server.js",
         "dev": "tsx watch src/server.ts",
         "lint": "eslint .",
         "typecheck": "tsc --noEmit",
