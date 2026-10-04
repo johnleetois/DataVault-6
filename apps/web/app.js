@@ -4202,20 +4202,34 @@
 
       try {
         const payload = { name, email };
-        await apiClient.request("/api/admins", {
+        const res = await apiClient.request("/api/admins", {
           method: "POST",
           body: JSON.stringify(payload)
         });
 
+        const verificationUrl = res?.verificationUrl ? this.toLocalhostUrl(res.verificationUrl) : "";
+
         if (succEl) {
           succEl.innerHTML = `
             <div style="font-weight: 700; margin-bottom: 4px; color: #10B981; font-size: 13.5px;">✓ Administrator Invited (Status: PENDING)</div>
-            <div style="font-size: 12px;">
+            <div style="font-size: 12px; margin-bottom: 8px;">
               An email verification and password setup invitation was sent to <strong>${escapeHtml(email)}</strong>.<br>
               <strong>Security Rule:</strong> This account remains in <em>PENDING</em> status and <u>cannot log in or be activated</u> until the administrator verifies their email and establishes a password.
             </div>
+            ${verificationUrl ? `
+            <div style="margin-top: 10px; padding: 10px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px;">
+              <div style="font-size: 11px; font-weight: 600; color: #38bdf8; margin-bottom: 4px;">Direct Verification Link (sent to user):</div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" readonly value="${escapeHtml(verificationUrl)}" style="flex: 1; font-family: monospace; font-size: 11.5px; padding: 5px 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: #e2e8f0;">
+                <button type="button" class="btn-secondary" onclick="navigator.clipboard?.writeText('${escapeHtml(verificationUrl)}'); showToast('Verification link copied!', 'success');" style="padding: 5px 10px; font-size: 11px; white-space: nowrap;">Copy Link</button>
+              </div>
+            </div>` : ""}
           `;
           succEl.style.display = "block";
+        }
+
+        if (verificationUrl) {
+          this.showCopyInviteModal(name, verificationUrl);
         }
 
         showToast(`Administrator invited! Verification email sent to ${email}.`, "success");
@@ -4512,9 +4526,14 @@
         buttonEl.textContent = "Sending...";
       }
       try {
-        await apiClient.request(`/api/admins/${id}/resend-verification`, {
+        const res = await apiClient.request(`/api/admins/${id}/resend-verification`, {
           method: "POST"
         });
+
+        const verificationUrl = res?.verificationUrl ? this.toLocalhostUrl(res.verificationUrl) : "";
+        if (verificationUrl) {
+          this.showCopyInviteModal(name || "Administrator", verificationUrl);
+        }
 
         showToast(`Verification invitation email resent to ${name || 'administrator'}! Auto-refreshing directory every 5s.`, "success");
         await this.loadAdmins(false);

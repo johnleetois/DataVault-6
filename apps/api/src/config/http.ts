@@ -4,6 +4,22 @@ import helmet from "helmet";
 import type { Express } from "express";
 import { env } from "./env.js";
 
+function isAllowedDevOrigin(origin: string): boolean {
+  if (env.NODE_ENV === "production") return false;
+  try {
+    const { hostname } = new URL(origin);
+    return (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("10.") ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function configureHttp(app: Express): void {
   app.set("trust proxy", 1);
   const allowedOrigins = [
@@ -22,7 +38,11 @@ export function configureHttp(app: Express): void {
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
         const normalized = origin.replace(/\/+$/, "");
-        if (allowedOrigins.includes(normalized) || allowedOrigins.includes("*")) {
+        if (
+          allowedOrigins.includes(normalized) ||
+          allowedOrigins.includes("*") ||
+          isAllowedDevOrigin(normalized)
+        ) {
           return callback(null, true);
         }
         return callback(null, false);

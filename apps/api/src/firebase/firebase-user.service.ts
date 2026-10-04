@@ -13,10 +13,14 @@ export type FirebaseUserDocument = {
 };
 
 export class FirebaseUserService {
-  private readonly config: FirebaseConfig;
+  private readonly explicitConfig: FirebaseConfig | undefined;
 
-  constructor(config = getFirebaseConfig()) {
-    this.config = config;
+  constructor(config?: FirebaseConfig | undefined) {
+    this.explicitConfig = config;
+  }
+
+  get config(): FirebaseConfig {
+    return this.explicitConfig ?? getFirebaseConfig();
   }
 
   get isConfigured(): boolean {

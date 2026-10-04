@@ -69,11 +69,11 @@ export class AdminManagementService {
     this.dependencies = { ...defaultDependencies(), ...dependencies };
   }
 
-  async createAdmin(input: AdminProfileInput, actor: LogActor = { actorType: "SYSTEM" }) {
+  async createAdmin(input: AdminProfileInput, actor: LogActor = { actorType: "SYSTEM" }, baseUrlOverride?: string) {
     const email = normalizeEmail(input.email);
     if (await this.dependencies.admins.findByEmail(email)) throw new ConflictError("EMAIL_ALREADY_EXISTS");
     const admin = await this.dependencies.admins.createPending({ name: input.name.trim(), email });
-    const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name);
+    const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name, baseUrlOverride);
     void this.dependencies.firebase?.syncUserToFirestore({
       id: admin.id,
       name: admin.name,
@@ -251,12 +251,12 @@ export class AdminManagementService {
     });
   }
 
-  async resendVerification(id: string, actor: LogActor = { actorType: "SYSTEM" }) {
+  async resendVerification(id: string, actor: LogActor = { actorType: "SYSTEM" }, baseUrlOverride?: string) {
     const admin = await this.dependencies.admins.findById(id);
     if (!admin) throw new NotFoundError("ADMIN_NOT_FOUND");
     if (admin.emailVerified) throw new ConflictError("EMAIL_ALREADY_VERIFIED");
     await this.dependencies.tokens.invalidateVerifications(id, this.dependencies.now());
-    const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name);
+    const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name, baseUrlOverride);
     void this.dependencies.firebase?.sendFirebasePasswordResetEmail(admin.email);
     await this.audit({
       ...actor,
@@ -381,12 +381,13 @@ export class AdminManagementService {
     }
   }
 
-  private async sendVerification(id: string, email: string, name: string): Promise<{ verificationUrl: string }> {
+  private async sendVerification(id: string, email: string, name: string, baseUrlOverride?: string): Promise<{ verificationUrl: string }> {
     const config = this.dependencies.emailConfig();
     const token = this.dependencies.createToken();
     const expiresAt = new Date(this.dependencies.now().getTime() + config.VERIFICATION_TOKEN_EXPIRES_HOURS * 60 * 60 * 1000);
     await this.dependencies.tokens.createVerification(id, hashRefreshToken(token), expiresAt);
-    const baseUrl = (config.appBaseUrl || config.webOrigin || "").replace(/\/+$/, "");
+    const candidateBase = baseUrlOverride?.trim() || config.appBaseUrl || config.webOrigin || "http://localhost:8080";
+    const baseUrl = candidateBase.replace(/\/+$/, "");
     const verificationUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(token)}`;
     console.info(`[Admin Verification] Token created for ${email}. Verification Link: ${verificationUrl}`);
     try {

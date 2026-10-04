@@ -29,7 +29,8 @@ export function createAdminRouter(service = new AdminManagementService(), authen
 
   router.post("/", async (request, response, next) => {
     try {
-      response.status(201).json(await service.createAdmin(createAdminSchema.parse(request.body), requestActor(request)));
+      const clientBaseUrl = extractClientBaseUrl(request);
+      response.status(201).json(await service.createAdmin(createAdminSchema.parse(request.body), requestActor(request), clientBaseUrl));
     } catch (error) {
       next(error);
     }
@@ -74,7 +75,8 @@ export function createAdminRouter(service = new AdminManagementService(), authen
 
   router.post("/:id/resend-verification", async (request, response, next) => {
     try {
-      response.status(202).json(await service.resendVerification(idSchema.parse(request.params.id), requestActor(request)));
+      const clientBaseUrl = extractClientBaseUrl(request);
+      response.status(202).json(await service.resendVerification(idSchema.parse(request.params.id), requestActor(request), clientBaseUrl));
     } catch (error) {
       next(error);
     }
@@ -107,6 +109,19 @@ export function createAdminRouter(service = new AdminManagementService(), authen
   });
 
   return router;
+}
+
+function extractClientBaseUrl(request: import("express").Request): string | undefined {
+  const origin = request.get("origin");
+  if (origin && !origin.includes(":4000")) return origin.replace(/\/+$/, "");
+  const referer = request.get("referer");
+  if (referer) {
+    try {
+      const u = new URL(referer);
+      if (!u.host.includes(":4000")) return `${u.protocol}//${u.host}`;
+    } catch {}
+  }
+  return undefined;
 }
 
 export const adminRouter = createAdminRouter();
