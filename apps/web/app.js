@@ -306,15 +306,9 @@
         NotificationsManager.loadNotifications();
       }
 
-      if (typeof AutoRefreshManager !== "undefined") {
-        AutoRefreshManager.startTimer();
-      }
     },
 
     showLoginScreen() {
-      if (typeof AutoRefreshManager !== "undefined") {
-        AutoRefreshManager.stopTimer();
-      }
       const loginScreen = document.getElementById("loginScreen");
       const appLayout = document.getElementById("appLayout");
       if (appLayout) appLayout.style.display = "none";
@@ -3947,38 +3941,8 @@
     admins: [],
     searchQuery: "",
     activeTab: "create",
-    autoRefreshTimer: null,
-    autoRefreshIntervalMs: 5000,
-
     init() {
       this.bindEvents();
-    },
-
-    startAutoRefresh() {
-      if (this.autoRefreshTimer) {
-        clearInterval(this.autoRefreshTimer);
-      }
-      const badge = document.getElementById("adminAutoRefreshBadge");
-      if (badge) {
-        badge.style.display = "inline-flex";
-      }
-      this.autoRefreshTimer = setInterval(() => {
-        const modal = document.getElementById("createAdminModal");
-        if (modal && modal.style.display !== "none") {
-          this.loadAdmins(false);
-        }
-      }, this.autoRefreshIntervalMs);
-    },
-
-    stopAutoRefresh() {
-      if (this.autoRefreshTimer) {
-        clearInterval(this.autoRefreshTimer);
-        this.autoRefreshTimer = null;
-      }
-      const badge = document.getElementById("adminAutoRefreshBadge");
-      if (badge) {
-        badge.style.display = "none";
-      }
     },
 
     bindEvents() {
@@ -4542,7 +4506,7 @@
           this.showCopyInviteModal(name || "Administrator", verificationUrl);
         }
 
-        showToast(`Verification invitation email resent to ${name || 'administrator'}! Auto-refreshing directory every 5s.`, "success");
+        showToast(`Verification invitation email resent to ${name || 'administrator'}!`, "success");
         await this.loadAdmins(false);
         if (typeof ActivityLogsManager !== "undefined") {
           ActivityLogsManager.loadRecentActivity();
@@ -5401,92 +5365,7 @@
   };
 
   // =========================================================================
-  // 14. SILENT BACKGROUND AUTO-REFRESH ACTIVITY & DATA MANAGER
-  // =========================================================================
-
-  const AutoRefreshManager = {
-    timer: null,
-    interval: 15000, // 15s background cycle
-    isRefreshing: false,
-
-    init() {
-      // Pause when tab is inactive, resume immediately when tab is active
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          if (AuthManager.currentUser) {
-            this.refreshAll();
-          }
-          this.startTimer();
-        } else {
-          this.stopTimer();
-        }
-      });
-    },
-
-    startTimer() {
-      this.stopTimer();
-      if (AuthManager.currentUser) {
-        this.timer = setInterval(() => {
-          if (document.visibilityState === "visible" && AuthManager.currentUser) {
-            this.refreshAll();
-          }
-        }, this.interval);
-      }
-    },
-
-    stopTimer() {
-      if (this.timer) {
-        clearInterval(this.timer);
-        this.timer = null;
-      }
-    },
-
-    async refreshAll() {
-      if (this.isRefreshing) return;
-      if (!AuthManager.currentUser) return;
-
-      this.isRefreshing = true;
-
-      try {
-        const tasks = [];
-
-        // 1. Silently refresh notifications count and list
-        tasks.push(Promise.resolve(NotificationsManager.loadNotifications()).catch(() => {}));
-
-        // 2. Silently refresh active screen data
-        const activeNav = document.querySelector(".sidebar-nav .nav-item.active");
-        const activeId = activeNav?.id || "";
-        const activeDb = activeNav?.dataset?.db;
-
-        if (activeDb) {
-          tasks.push(Promise.resolve(DatasetsManager.loadDatasets()).catch(() => {}));
-        } else if (activeId === "nav-dashboard" || !activeId) {
-          tasks.push(Promise.resolve(DashboardManager.loadStats()).catch(() => {}));
-          tasks.push(Promise.resolve(ActivityLogsManager.loadRecentActivity()).catch(() => {}));
-        } else if (activeId === "nav-explore" || activeId === "nav-my-datasets" || activeId === "nav-bookmarked" || activeId === "nav-datasets") {
-          tasks.push(Promise.resolve(DatasetsManager.loadDatasets()).catch(() => {}));
-        } else if (activeId === "nav-requests-tool") {
-          tasks.push(Promise.resolve(DataRequestsManager.loadRequests()).catch(() => {}));
-        } else if (activeId === "nav-analytics-tool") {
-          tasks.push(Promise.resolve(AnalyticsScreenManager.loadAnalytics()).catch(() => {}));
-        }
-
-        const logModal = document.getElementById("activityLogsModal");
-        if (logModal && logModal.style.display !== "none") {
-          tasks.push(Promise.resolve(ActivityLogsManager.loadFullLogs()).catch(() => {}));
-        }
-
-        await Promise.allSettled(tasks);
-      } catch (err) {
-        // Silent background catch
-      } finally {
-        this.isRefreshing = false;
-      }
-    }
-  };
-
-  // =========================================================================
-  // 15. INITIALIZATION ON DOM READY
+  // 14. INITIALIZATION ON DOM READY
   // =========================================================================
 
   document.addEventListener("DOMContentLoaded", async function () {
@@ -5503,12 +5382,11 @@
     ActivationManager.init();
     MobileNavManager.init();
     PwaManager.init();
-    AutoRefreshManager.init();
 
     // Authenticate first; data managers are triggered by showAppLayout() once authenticated
     await AuthManager.init();
 
-    console.log("DataVault6 frontend fully integrated with real REST backend APIs, PWA, and Live Sync.");
+    console.log("DataVault6 frontend fully integrated with real REST backend APIs and PWA.");
   });
 
 })();

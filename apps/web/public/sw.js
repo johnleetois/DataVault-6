@@ -3,7 +3,7 @@
  * High-performance PWA caching, offline shell resilience & lifecycle management
  */
 
-const CACHE_NAME = "datavault6-pwa-v2";
+const CACHE_NAME = "datavault6-pwa-v3";
 
 const PRECACHE_ASSETS = [
   "/",
