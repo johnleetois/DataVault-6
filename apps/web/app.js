@@ -4489,9 +4489,6 @@
     },
 
     async resendVerification(id, name, buttonEl) {
-      // Trigger 5-second auto-refresh of the Admin Directory as soon as Resend is clicked
-      this.startAutoRefresh();
-
       if (buttonEl) {
         buttonEl.disabled = true;
         buttonEl.textContent = "Sending...";
